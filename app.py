@@ -1,21 +1,27 @@
-
 import streamlit as st
 from transformers import pipeline
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="VISTA", layout="wide")
+st.set_page_config(page_title="VISTA - Blind Spot AI", layout="wide")
 
-# --- HEADER BANNER ---
-st.markdown("<h1 style='text-align: center; color: #00FFAA;'>🧠 VISTA - Blind Spot AI 🧠</h1>", unsafe_allow_html=True)
+# --- CACHE MODEL LOADING (Efficiency) ---
+@st.cache_resource
+def load_model():
+    return pipeline("text-generation", model="gpt2")
 
-# --- GLOBAL STYLES ---
+generator = load_model()
+
+# --- GLOBAL STYLES (Accessibility: semantic tags + contrast) ---
 st.markdown(
     """
     <style>
     body {
-        background-color: #121212; /* Dark background */
-        color: #ffffff; /* White text */
+        background-color: #121212;
+        color: #ffffff;
         font-family: 'Segoe UI', sans-serif;
+    }
+    h1, h2, h3 {
+        font-weight: bold;
     }
     .stButton>button {
         background-color: #4CAF50;
@@ -34,46 +40,58 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# --- HEADER ---
+st.markdown("<h1 style='text-align: center; color: #00FFAA;'>🧠 VISTA - Blind Spot AI 🧠</h1>", unsafe_allow_html=True)
+
 # --- MODE SWITCHER ---
+def apply_mode(mode):
+    if mode == "🌙 Dark":
+        st.markdown("<style>body {background-color: #000000; color: #FFFFFF;}</style>", unsafe_allow_html=True)
+    elif mode == "☀️ Light":
+        st.markdown("<style>body {background-color: #FFFFFF; color: #000000;}</style>", unsafe_allow_html=True)
+    elif mode == "👓 Eye Comfort":
+        st.markdown("<style>body {background-color: #2E3B2E; color: #E0E0C0;}</style>", unsafe_allow_html=True)
+
 mode = st.radio("🎨 Choose Mode:", ["🌙 Dark", "☀️ Light", "👓 Eye Comfort"])
+apply_mode(mode)
 
-if mode == "🌙 Dark":
-    st.markdown("<style>body {background-color: #000000; color: #FFFFFF;}</style>", unsafe_allow_html=True)
-elif mode == "☀️ Light":
-    st.markdown("<style>body {background-color: #FFFFFF; color: #000000;}</style>", unsafe_allow_html=True)
-elif mode == "👓 Eye Comfort":
-    st.markdown("<style>body {background-color: #2E3B2E; color: #E0E0C0;}</style>", unsafe_allow_html=True)
-
-# --- LAYOUT ---
-col1, col2 = st.columns([1,2])
-
-with col1:
+# --- PROFILE CREATOR ---
+def create_profile():
     st.header("👤 Create Profile")
     name = st.text_input("Name")
     role = st.text_input("💼 Role (e.g., Student, Engineer)")
     goal = st.text_input("🎯 Decision Goal")
+    return name, role, goal
+
+# --- DECISION ANALYZER ---
+def analyze_reasoning(user_input):
+    if user_input.strip():
+        response = generator(
+            f"Analyze blind spots in reasoning: {user_input}",
+            max_length=150,
+            num_return_sequences=1
+        )[0]["generated_text"]
+
+        if "history" not in st.session_state:
+            st.session_state["history"] = []
+        st.session_state["history"].append({"input": user_input, "output": response})
+
+        st.subheader("✨ AI Suggestions")
+        st.write(response)
+
+# --- LAYOUT ---
+col1, col2 = st.columns([1, 2])
+
+with col1:
+    name, role, goal = create_profile()
 
 with col2:
     st.header("📝 Decision Reasoning")
     user_input = st.text_area("Describe your decision reasoning:")
-    generator = pipeline("text-generation", model="gpt2")
-
     if st.button("🔍 Analyze Blind Spots"):
-        if user_input.strip():
-            response = generator(
-                f"Analyze blind spots in reasoning: {user_input}",
-                max_length=150,
-                num_return_sequences=1
-            )[0]["generated_text"]
+        analyze_reasoning(user_input)
 
-            if "history" not in st.session_state:
-                st.session_state["history"] = []
-            st.session_state["history"].append({"input": user_input, "output": response})
-
-            st.subheader("✨ AI Suggestions")
-            st.write(response)
-
-# --- HISTORY VIEW ---
+# --- HISTORY ---
 if "history" in st.session_state and st.session_state["history"]:
     st.subheader("📜 Past Analyses")
     for i, entry in enumerate(st.session_state["history"], 1):
@@ -82,3 +100,4 @@ if "history" in st.session_state and st.session_state["history"]:
 
 # --- FOOTER ---
 st.markdown("<p style='text-align:center; color:gray;'>Made with ❤️ for Hack2Skill</p>", unsafe_allow_html=True)
+
