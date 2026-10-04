@@ -1,5 +1,23 @@
 import streamlit as st
 st.markdown("<h1 style='text-align: center; color: #00FFAA;'>🌌 VISTA - Blind Spot AI 🌌</h1>", unsafe_allow_html=True)
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #121212; /* Dark background */
+        color: #ffffff; /* White text */
+    }
+    .stButton>button {
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 8px;
+        padding: 10px 20px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
 from transformers import pipeline
 
